@@ -78,7 +78,8 @@ type KeepAliveTimeout struct {
 type KeepAliveRestored struct{}
 
 type KeepAliveSuccess struct {
-	Jid *types.JID
+	Jid         *types.JID
+	LastSuccess time.Time
 }
 
 // PermanentDisconnect is a class of events emitted when the client will not auto-reconnect by default.
