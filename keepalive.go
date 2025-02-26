@@ -54,7 +54,7 @@ func (cli *Client) keepAliveLoop(ctx context.Context) {
 					go cli.dispatchEvent(&events.KeepAliveRestored{})
 				}
 				lastSuccess = time.Now()
-				go cli.dispatchEvent(&events.KeepAliveSuccess{})
+				go cli.dispatchEvent(&events.KeepAliveSuccess{Jid: cli.Store.ID})
 			}
 		case <-ctx.Done():
 			return
