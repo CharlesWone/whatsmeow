@@ -77,6 +77,8 @@ type KeepAliveTimeout struct {
 // Note that if the websocket disconnects before the pings start working, this event will not be emitted.
 type KeepAliveRestored struct{}
 
+type KeepAliveSuccess struct{}
+
 // PermanentDisconnect is a class of events emitted when the client will not auto-reconnect by default.
 type PermanentDisconnect interface {
 	PermanentDisconnectDescription() string
