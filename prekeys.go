@@ -179,8 +179,8 @@ func (cli *Client) FetchPreKeyTimes(ctx context.Context, users []types.JID) (map
 		_, ok := child.GetOptionalChildByTag("key")
 		t := child.AttrGetter().Int64("t")
 		if !ok && t >= start {
-			// 1、如果<key>为空，且时间戳大于当前时间戳，则未注册
-			// 2、如果时间戳为过去的时间戳，时间戳是最后上传公钥的时间，<key>为空则是公钥被用完了
+			// 1.If <key> is empty and the timestamp is greater than the current timestamp, it is not registered
+			// 2.If the timestamp is a past timestamp, the timestamp is the last time the public key was uploaded, If <key> is empty it means the public key has been used up
 			continue
 		}
 		respData[child.AttrGetter().JID("jid")] = t
