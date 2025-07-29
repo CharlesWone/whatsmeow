@@ -58,7 +58,7 @@ func (cli *Client) handleStreamError(node *waBinary.Node) {
 		cli.Log.Infof("Got %s stream error, refreshing CAT before reconnecting...", code)
 		cli.socketLock.RLock()
 		defer cli.socketLock.RUnlock()
-		err := cli.RefreshCAT()
+		err := cli.RefreshCAT(ctx)
 		if err != nil {
 			cli.Log.Errorf("Failed to refresh CAT: %v", err)
 			cli.expectDisconnect()
@@ -136,7 +136,7 @@ func (cli *Client) handleConnectFailure(node *waBinary.Node) {
 		go cli.dispatchEvent(&events.ClientOutdated{})
 	} else if reason == events.ConnectFailureCATInvalid || reason == events.ConnectFailureCATExpired {
 		cli.Log.Infof("Got %d/%s connect failure, refreshing CAT before reconnecting...", int(reason), message)
-		err := cli.RefreshCAT()
+		err := cli.RefreshCAT(ctx)
 		if err != nil {
 			cli.Log.Errorf("Failed to refresh CAT: %v", err)
 			cli.expectDisconnect()
@@ -157,6 +157,11 @@ func (cli *Client) handleConnectSuccess(node *waBinary.Node) {
 	cli.AutoReconnectErrors = 0
 	cli.isLoggedIn.Store(true)
 	nodeLID := node.AttrGetter().JID("lid")
+	if !cli.Store.LID.IsEmpty() && !nodeLID.IsEmpty() && cli.Store.LID != nodeLID {
+		// This should probably never happen, but check just in case.
+		cli.Log.Warnf("Stored LID doesn't match one in connect success: %s != %s", cli.Store.LID, nodeLID)
+		cli.Store.LID = types.EmptyJID
+	}
 	if cli.Store.LID.IsEmpty() && !nodeLID.IsEmpty() {
 		cli.Store.LID = nodeLID
 		err := cli.Store.Save(ctx)
@@ -165,8 +170,10 @@ func (cli *Client) handleConnectSuccess(node *waBinary.Node) {
 		} else {
 			cli.Log.Infof("Updated LID to %s", cli.Store.LID)
 		}
-		cli.StoreLIDPNMapping(ctx, cli.Store.GetLID(), cli.Store.GetJID())
 	}
+	// Some users are missing their own LID-PN mapping even though it's already in the device table,
+	// so do this unconditionally for a few months to ensure everyone gets the row.
+	cli.StoreLIDPNMapping(ctx, cli.Store.GetLID(), cli.Store.GetJID())
 	go func() {
 		if dbCount, err := cli.Store.PreKeys.UploadedPreKeyCount(ctx); err != nil {
 			cli.Log.Errorf("Failed to get number of prekeys in database: %v", err)
